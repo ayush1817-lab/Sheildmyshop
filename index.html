@@ -1557,10 +1557,9 @@
       btn.textContent = 'Joining...';
 
       try {
-        const { data, error } = await publicDb
+        const { error } = await publicDb
           .from('waitlist')
-          .insert([{ email, source: sourceLabel }])
-          .select();
+          .insert([{ email, source: sourceLabel }]);
 
         if (error) {
           if (error.code === '23505') {
