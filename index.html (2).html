@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldMyShop — Etsy Listing Compliance Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --orange-brand: #F26522;
+  --orange-light: #FF8A50;
+  --orange-dark: #D4510E;
+  --cream: #FFF9F4;
+  --cream-dark: #FFF0E6;
+  --charcoal: #1A1A1A;
+  --slate: #4A4A4A;
+  --green-safe: #22A65B;
+  --yellow-warn: #E8A817;
+  --red-danger: #DC3545;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--charcoal);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════ NAV ═══════════════════ */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 1rem 2rem;
+  background: rgba(255, 249, 244, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(242, 101, 34, 0.08);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-display); font-weight: 700; font-size: 1.25rem;
+  color: var(--charcoal); text-decoration: none;
+}
+.nav-logo .shield-icon {
+  width: 32px; height: 32px; background: var(--orange-brand); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 1rem; font-weight: 800;
+}
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a {
+  text-decoration: none; color: var(--slate); font-size: 0.9rem;
+  font-weight: 500; transition: color 0.2s; cursor: pointer;
+}
+.nav-links a:hover { color: var(--orange-brand); }
+.nav-cta {
+  background: var(--orange-brand); color: white !important; padding: 0.5rem 1.25rem;
+  border-radius: 8px; font-weight: 600 !important; transition: all 0.2s;
+}
+.nav-cta:hover { background: var(--orange-dark) !important; transform: translateY(-1px); }
+
+/* ═══════════════════ HERO ═══════════════════ */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 8rem 2rem 4rem; position: relative;
+  background: linear-gradient(165deg, var(--cream) 0%, var(--cream-dark) 50%, #FFE8D6 100%);
+}
+.hero::before {
+  content: ''; position: absolute; top: -200px; right: -200px;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(242,101,34,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute; bottom: -100px; left: -100px;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(242,101,34,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner {
+  max-width: 1200px; width: 100%; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(242,101,34,0.08); border: 1px solid rgba(242,101,34,0.15);
+  padding: 0.4rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600;
+  color: var(--orange-dark); margin-bottom: 1.5rem;
+  animation: fadeInUp 0.6s ease-out;
+}
+.badge-dot {
+  width: 8px; height: 8px; background: var(--orange-brand);
+  border-radius: 50%; animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.hero h1 {
+  font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 800; line-height: 1.1; color: var(--charcoal); margin-bottom: 1.5rem;
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+.hero h1 em {
+  font-style: italic; color: var(--orange-brand);
+  text-decoration: underline; text-decoration-color: rgba(242,101,34,0.25);
+  text-underline-offset: 4px; text-decoration-thickness: 3px;
+}
+.hero-sub {
+  font-size: 1.15rem; color: var(--slate); max-width: 480px; margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+.hero-stat {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(220, 53, 69, 0.06); border: 1px solid rgba(220,53,69,0.12);
+  padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.85rem;
+  color: var(--red-danger); font-weight: 600; margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out 0.3s both;
+}
+
+/* ═══════════════════ EMAIL FORM ═══════════════════ */
+.email-form {
+  display: flex; gap: 0.75rem; max-width: 480px;
+  animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+.email-form input {
+  flex: 1; padding: 0.9rem 1.25rem; border: 2px solid #E0D6CC;
+  border-radius: 12px; font-size: 1rem; font-family: var(--font-body);
+  background: white; transition: border-color 0.2s; outline: none;
+}
+.email-form input:focus { border-color: var(--orange-brand); }
+.email-form input::placeholder { color: #B0A89E; }
+.email-form button {
+  padding: 0.9rem 2rem; background: var(--orange-brand); color: white;
+  border: none; border-radius: 12px; font-size: 1rem; font-weight: 700;
+  font-family: var(--font-body); cursor: pointer; white-space: nowrap;
+  transition: all 0.25s; position: relative; overflow: hidden;
+  min-width: 145px;
+}
+.email-form button:hover { background: var(--orange-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(242,101,34,0.25); }
+.email-form button:active { transform: translateY(0); }
+.email-form button:disabled { pointer-events: none; opacity: 0.7; }
+.email-form button.success { background: var(--green-safe); }
+
+.form-note {
+  font-size: 0.8rem; color: #9A9088; margin-top: 0.75rem;
+  animation: fadeInUp 0.6s ease-out 0.5s both;
+}
+.form-message {
+  margin-top: 0.75rem; padding: 0.6rem 1rem; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 500; display: none;
+}
+.form-message.show { display: block; animation: fadeInUp 0.3s ease-out; }
+.form-message.success { background: rgba(34,166,91,0.08); color: var(--green-safe); border: 1px solid rgba(34,166,91,0.15); }
+.form-message.error { background: rgba(220,53,69,0.08); color: var(--red-danger); border: 1px solid rgba(220,53,69,0.15); }
+
+/* ═══════════════════ MOCKUP CARD ═══════════════════ */
+.hero-visual {
+  position: relative;
+  animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+.mockup-card {
+  background: white; border-radius: 20px; padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.03), 0 20px 60px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.04); position: relative;
+  transform: rotate(1deg);
+}
+.mockup-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #F0ECE8;
+}
+.mockup-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+.mockup-badge-safe {
+  background: rgba(34,166,91,0.1); color: var(--green-safe);
+  padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.75rem; font-weight: 700;
+}
+.scan-item {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 0.8rem 0; border-bottom: 1px solid #F8F5F2;
+}
+.scan-item:last-child { border-bottom: none; }
+.scan-icon {
+  width: 28px; height: 28px; border-radius: 8px; display: flex;
+  align-items: center; justify-content: center; font-size: 0.8rem;
+  flex-shrink: 0; margin-top: 2px;
+}
+.scan-icon.green { background: rgba(34,166,91,0.1); color: var(--green-safe); }
+.scan-icon.yellow { background: rgba(232,168,23,0.1); color: var(--yellow-warn); }
+.scan-icon.red { background: rgba(220,53,69,0.1); color: var(--red-danger); }
+.scan-label { font-size: 0.85rem; font-weight: 600; color: var(--charcoal); }
+.scan-desc { font-size: 0.78rem; color: var(--slate); margin-top: 2px; }
+
+.mockup-float {
+  position: absolute; top: -20px; right: -20px;
+  background: white; border-radius: 14px; padding: 0.8rem 1.1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.04);
+  font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* ═══════════════════ HOW IT WORKS ═══════════════════ */
+.section { padding: 6rem 2rem; }
+.section-inner { max-width: 1000px; margin: 0 auto; }
+.section-label {
+  font-family: var(--font-display); font-size: 0.85rem; font-weight: 600;
+  color: var(--orange-brand); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+.section-title {
+  font-family: var(--font-display); font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 800; line-height: 1.2; margin-bottom: 1rem;
+}
+.section-sub { font-size: 1.05rem; color: var(--slate); max-width: 600px; margin-bottom: 3rem; }
+
+.steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.step-card {
+  background: white; border-radius: 16px; padding: 2rem;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  transition: all 0.3s;
+}
+.step-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.06); }
+.step-num {
+  width: 40px; height: 40px; border-radius: 12px; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(242,101,34,0.08); color: var(--orange-brand);
+  font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  margin-bottom: 1.25rem;
+}
+.step-card h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; margin-bottom: 0.5rem; }
+.step-card p { font-size: 0.9rem; color: var(--slate); }
+
+/* ═══════════════════ PAIN SECTION ═══════════════════ */
+.pain-section { background: var(--charcoal); color: white; }
+.pain-section .section-label { color: var(--orange-light); }
+.pain-section .section-title { color: white; }
+.pain-section .section-sub { color: rgba(255,255,255,0.6); }
+
+.pain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.pain-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 1.75rem; transition: all 0.3s;
+}
+.pain-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(242,101,34,0.3); }
+.pain-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+.pain-card h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem; }
+.pain-card p { font-size: 0.85rem; color: rgba(255,255,255,0.55); line-height: 1.5; }
+
+/* ═══════════════════ CTA SECTION ═══════════════════ */
+.cta-section {
+  background: linear-gradient(135deg, #FFF0E6 0%, #FFE0CC 100%);
+  text-align: center;
+}
+.cta-section .section-inner { max-width: 640px; }
+.cta-section .section-title { margin-bottom: 1rem; }
+.cta-section .section-sub { margin-left: auto; margin-right: auto; margin-bottom: 2rem; }
+.email-form-center { justify-content: center; max-width: 500px; margin: 0 auto; }
+
+/* ═══════════════════ FOOTER ═══════════════════ */
+.footer {
+  padding: 2.5rem 2rem; text-align: center;
+  font-size: 0.8rem; color: var(--slate);
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* ═══════════════════ SETUP BANNER ═══════════════════ */
+.setup-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: #FFF3CD; border-top: 2px solid #E8A817; padding: 0.8rem 2rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+  font-size: 0.85rem; font-weight: 500; color: #856404;
+}
+.setup-banner a { color: var(--orange-dark); font-weight: 700; cursor: pointer; }
+
+/* ═══════════════════ ADMIN OVERLAY ═══════════════════ */
+.admin-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 2rem;
+}
+.admin-overlay.active { display: flex; }
+.admin-panel {
+  background: white; border-radius: 20px; padding: 2.5rem;
+  max-width: 800px; width: 100%; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+.admin-header h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; }
+.admin-close {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid #E0D6CC;
+  background: transparent; font-size: 1.2rem; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--slate); transition: all 0.2s;
+}
+.admin-close:hover { background: #F5F0EB; color: var(--charcoal); }
+
+/* Admin Login */
+.admin-login { text-align: center; padding: 2rem 0; }
+.admin-login p { color: var(--slate); margin-bottom: 1.5rem; font-size: 0.95rem; }
+.admin-login-form { display: flex; gap: 0.75rem; max-width: 360px; margin: 0 auto; }
+.admin-login-form input {
+  flex: 1; padding: 0.8rem 1rem; border: 2px solid #E0D6CC; border-radius: 10px;
+  font-size: 0.95rem; font-family: var(--font-body); outline: none; transition: border-color 0.2s;
+}
+.admin-login-form input:focus { border-color: var(--orange-brand); }
+.admin-login-form button {
+  padding: 0.8rem 1.5rem; background: var(--charcoal); color: white;
+  border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+  font-family: var(--font-body); cursor: pointer; transition: all 0.2s;
+}
+.admin-login-form button:hover { background: #333; }
+.admin-login-error {
+  color: var(--red-danger); font-size: 0.82rem; margin-top: 0.75rem;
+  font-weight: 500; display: none;
+}
+
+/* Admin Dashboard Content */
+.admin-dashboard { display: none; }
+.admin-dashboard.active { display: block; }
+
+.admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.stat-card {
+  background: #F9F6F3; border-radius: 12px; padding: 1.25rem; text-align: center;
+}
+.stat-num {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.75rem;
+  color: var(--orange-brand);
+}
+.stat-label { font-size: 0.78rem; color: var(--slate); margin-top: 0.25rem; font-weight: 500; }
+
+.admin-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem; gap: 0.75rem; flex-wrap: wrap;
+}
+.admin-search {
+  padding: 0.6rem 1rem; border: 1.5px solid #E0D6CC; border-radius: 10px;
+  font-size: 0.85rem; font-family: var(--font-body); outline: none;
+  width: 250px; transition: border-color 0.2s;
+}
+.admin-search:focus { border-color: var(--orange-brand); }
+.admin-toolbar-actions { display: flex; gap: 0.5rem; }
+
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th {
+  text-align: left; padding: 0.75rem 1rem; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--slate);
+  border-bottom: 2px solid #F0ECE8; font-weight: 600;
+}
+.admin-table td {
+  padding: 0.65rem 1rem; border-bottom: 1px solid #F5F2EF;
+  font-size: 0.85rem; vertical-align: middle;
+}
+.admin-table tr:hover td { background: #FDFAF7; }
+.admin-table .email-cell { font-weight: 600; color: var(--charcoal); }
+.admin-table .time-cell { color: var(--slate); font-size: 0.78rem; }
+.admin-table .source-badge {
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 6px;
+  font-size: 0.7rem; font-weight: 600;
+  background: rgba(242,101,34,0.08); color: var(--orange-brand);
+}
+.btn-del-row {
+  width: 28px; height: 28px; border-radius: 7px; border: 1px solid rgba(220,53,69,0.15);
+  background: transparent; color: var(--red-danger); font-size: 0.75rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; opacity: 0.5;
+}
+.btn-del-row:hover { opacity: 1; background: rgba(220,53,69,0.06); }
+
+.admin-empty {
+  text-align: center; padding: 3rem; color: var(--slate);
+}
+.admin-empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.admin-empty p { font-size: 0.9rem; }
+
+.btn-action {
+  padding: 0.55rem 1.1rem; border-radius: 9px; font-size: 0.8rem;
+  font-weight: 600; font-family: var(--font-body); cursor: pointer;
+  transition: all 0.2s; border: none;
+}
+.btn-export { background: var(--charcoal); color: white; }
+.btn-export:hover { background: #333; transform: translateY(-1px); }
+.btn-refresh { background: rgba(242,101,34,0.08); color: var(--orange-brand); }
+.btn-refresh:hover { background: rgba(242,101,34,0.15); }
+.btn-clear { background: transparent; color: var(--red-danger); border: 1px solid rgba(220,53,69,0.2) !important; }
+.btn-clear:hover { background: rgba(220,53,69,0.05); }
+.btn-logout { background: transparent; color: var(--slate); border: 1px solid #E0D6CC !important; }
+.btn-logout:hover { background: #F5F0EB; }
+
+.admin-footer-actions {
+  display: flex; gap: 0.6rem; margin-top: 1.5rem; justify-content: flex-end; flex-wrap: wrap;
+}
+
+.admin-status {
+  font-size: 0.78rem; padding: 0.4rem 0.8rem; border-radius: 8px;
+  margin-bottom: 1rem; font-weight: 500; display: none;
+}
+.admin-status.show { display: block; animation: fadeInUp 0.2s ease-out; }
+.admin-status.info { background: rgba(242,101,34,0.06); color: var(--orange-dark); }
+.admin-status.err { background: rgba(220,53,69,0.06); color: var(--red-danger); }
+.admin-status.ok { background: rgba(34,166,91,0.06); color: var(--green-safe); }
+
+/* ═══════════════════ SETUP MODAL ═══════════════════ */
+.setup-overlay {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 2rem;
+}
+.setup-overlay.active { display: flex; }
+.setup-panel {
+  background: white; border-radius: 20px; padding: 2.5rem;
+  max-width: 620px; width: 100%; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+  animation: slideUp 0.3s ease-out;
+}
+.setup-panel h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin-bottom: 0.5rem; }
+.setup-panel .setup-sub { font-size: 0.9rem; color: var(--slate); margin-bottom: 2rem; }
+
+.setup-step { margin-bottom: 2rem; }
+.setup-step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--orange-brand); color: white;
+  font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem;
+}
+.setup-step h3 { display: inline; font-size: 1rem; font-weight: 700; }
+.setup-step p { font-size: 0.85rem; color: var(--slate); margin-top: 0.5rem; line-height: 1.6; }
+.setup-step code {
+  display: block; background: #1A1A1A; color: #E8E0D8; padding: 1rem 1.25rem;
+  border-radius: 10px; font-size: 0.78rem; margin-top: 0.75rem;
+  overflow-x: auto; white-space: pre; line-height: 1.6;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.setup-step code .kw { color: #FF8A50; }
+.setup-step code .str { color: #22A65B; }
+.setup-step code .cmt { color: #6A6A6A; }
+
+.setup-fields { display: grid; gap: 1rem; margin-top: 1.5rem; }
+.setup-field label {
+  display: block; font-size: 0.8rem; font-weight: 600;
+  color: var(--slate); margin-bottom: 0.35rem; text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.setup-field input {
+  width: 100%; padding: 0.75rem 1rem; border: 2px solid #E0D6CC;
+  border-radius: 10px; font-size: 0.9rem; font-family: var(--font-body);
+  outline: none; transition: border-color 0.2s;
+}
+.setup-field input:focus { border-color: var(--orange-brand); }
+.setup-field input::placeholder { color: #C0B8AE; }
+.setup-field .field-hint { font-size: 0.75rem; color: #A0988E; margin-top: 0.3rem; }
+
+.setup-save-row { display: flex; gap: 0.75rem; margin-top: 2rem; }
+.setup-save-row .btn-action { flex: 1; padding: 0.8rem; font-size: 0.95rem; }
+.setup-save-row .btn-primary { background: var(--orange-brand); color: white; }
+.setup-save-row .btn-primary:hover { background: var(--orange-dark); }
+.setup-save-row .btn-secondary { background: #F5F0EB; color: var(--slate); }
+.setup-save-row .btn-secondary:hover { background: #EBE5DE; }
+
+/* ═══════════════════ ANIMATIONS ═══════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════ RESPONSIVE ═══════════════════ */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .hero-inner { grid-template-columns: 1fr; gap: 3rem; text-align: center; }
+  .hero-sub { margin-left: auto; margin-right: auto; }
+  .email-form { flex-direction: column; margin: 0 auto; }
+  .form-note { text-align: center; }
+  .hero-visual { max-width: 400px; margin: 0 auto; }
+  .mockup-card { transform: rotate(0); }
+  .mockup-float { top: -15px; right: 0; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .pain-grid { grid-template-columns: 1fr; }
+  .admin-stats { grid-template-columns: 1fr; }
+  .hero-stat { display: flex; justify-content: center; margin-left: auto; margin-right: auto; }
+  .hero-badge { margin-left: auto; margin-right: auto; }
+  .admin-toolbar { flex-direction: column; align-items: stretch; }
+  .admin-search { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <span class="shield-icon">S</span>
+    ShieldMyShop
+  </a>
+  <div class="nav-links">
+    <a href="#how">How It Works</a>
+    <a href="#why">Why Now</a>
+    <a href="#cta" class="nav-cta">Get Early Access</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Early Access — Launching Q2 2026
+      </div>
+      <h1>Stop guessing if your Etsy listings are <em>safe</em></h1>
+      <p class="hero-sub">Scan your listings against Etsy's latest policies before you publish. Catch trademark issues, compliance gaps, and policy red flags — before Etsy's bots do.</p>
+      <div class="hero-stat">
+        ⚠️&nbsp; 1.5M+ listings removed in 2024 — enforcement up 4× year over year
+      </div>
+      <form class="email-form" id="heroForm" onsubmit="handleSignup(event, 'hero')">
+        <input type="email" id="heroEmail" placeholder="you@email.com" required autocomplete="email" />
+        <button type="submit" id="heroBtn">Join Waitlist</button>
+      </form>
+      <div class="form-note">Free to join. No card required. Be first to scan your shop.</div>
+      <div class="form-message" id="heroMessage"></div>
+    </div>
+    <div class="hero-visual">
+      <div class="mockup-float">
+        <span style="color: var(--green-safe);">✓</span> 23 of 25 listings clear
+      </div>
+      <div class="mockup-card">
+        <div class="mockup-header">
+          <span class="mockup-title">Listing Scan Results</span>
+          <span class="mockup-badge-safe">Score: 88/100</span>
+        </div>
+        <div class="scan-item">
+          <div class="scan-icon green">✓</div>
+          <div><div class="scan-label">Title Compliance</div><div class="scan-desc">No trademark terms or misleading claims detected</div></div>
+        </div>
+        <div class="scan-item">
+          <div class="scan-icon yellow">!</div>
+          <div><div class="scan-label">GPSR Compliance</div><div class="scan-desc">EU Responsible Person field missing — required for EU buyers</div></div>
+        </div>
+        <div class="scan-item">
+          <div class="scan-icon green">✓</div>
+          <div><div class="scan-label">Creativity Standards</div><div class="scan-desc">Listing qualifies under "Designed by Seller" category</div></div>
+        </div>
+        <div class="scan-item">
+          <div class="scan-icon red">✕</div>
+          <div><div class="scan-label">IP Risk Detected</div><div class="scan-desc">Tag "disney inspired" may trigger automated takedown</div></div>
+        </div>
+        <div class="scan-item">
+          <div class="scan-icon green">✓</div>
+          <div><div class="scan-label">Category Rules</div><div class="scan-desc">Item correctly categorised — no restricted flags</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
+<section class="section" id="how">
+  <div class="section-inner">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">Three steps. Zero guesswork.</h2>
+    <p class="section-sub">No API keys, no complex setup. Paste your listing, get your results.</p>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Paste Your Listing</h3>
+        <p>Copy your title, description, and tags from Etsy and paste them in. Or scan your entire shop URL in one click.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Get Your Risk Score</h3>
+        <p>We check against Etsy's current policies — Creativity Standards, IP rules, GPSR requirements, category restrictions, and known trigger terms.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Fix Before You Publish</h3>
+        <p>Get specific, plain-English suggestions. Reword risky titles, remove flagged tags, fill compliance gaps — all before Etsy's bots notice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ WHY NOW ═══════════════════ -->
+<section class="section pain-section" id="why">
+  <div class="section-inner">
+    <div class="section-label">Why This Matters Now</div>
+    <h2 class="section-title">Etsy's enforcement changed.<br>Your tools haven't.</h2>
+    <p class="section-sub">June 2025 rewrote the rules. Sellers are losing listings — and entire shops — to automated bots that flag first, explain later.</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon">🤖</div>
+        <h3>Automated Takedowns</h3>
+        <p>Etsy's bots removed 4× more listings in 2024 than the year before. Many sellers only find out when revenue disappears.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📜</div>
+        <h3>Creativity Standards Overhaul</h3>
+        <p>The June 2025 update redefined what qualifies as handmade. Template-based designs — even with commercial licences — are now banned.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🇪🇺</div>
+        <h3>GPSR Compliance (EU)</h3>
+        <p>New EU General Product Safety Regulation requires an EU-based Responsible Person for all products sold to EU buyers. Most sellers don't know.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">⚖️</div>
+        <h3>Appeals Still Broken</h3>
+        <p>Etsy's listing appeals system is in early beta, only covers Creativity Standards, and many sellers report mixed results getting listings restored.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CTA ═══════════════════ -->
+<section class="section cta-section" id="cta">
+  <div class="section-inner">
+    <div class="section-label">Early Access</div>
+    <h2 class="section-title">Protect your shop before it's too late</h2>
+    <p class="section-sub">Join the waitlist and be among the first sellers to scan their shop when we launch. Early members get a free extended trial.</p>
+    <form class="email-form email-form-center" id="ctaForm" onsubmit="handleSignup(event, 'cta')">
+      <input type="email" id="ctaEmail" placeholder="you@email.com" required autocomplete="email" />
+      <button type="submit" id="ctaBtn">Join Waitlist</button>
+    </form>
+    <div class="form-message" id="ctaMessage"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="footer">
+  <p>ShieldMyShop — Built for Etsy sellers who'd rather create than worry. &copy; 2026</p>
+</footer>
+
+<!-- ═══════════════════ SETUP BANNER ═══════════════════ -->
+<div class="setup-banner" id="setupBanner" style="display:none;">
+  ⚙️ &nbsp;Supabase is not configured yet. <a onclick="openSetup()">Click here to set up your database</a>
+</div>
+
+<!-- ═══════════════════ SETUP MODAL ═══════════════════ -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-panel">
+    <h2>⚙️ Connect Supabase</h2>
+    <p class="setup-sub">One-time setup. Takes about 5 minutes. Your credentials are saved in your browser only.</p>
+
+    <div class="setup-step">
+      <span class="setup-step-num">1</span>
+      <h3>Create a Supabase project</h3>
+      <p>Go to <strong>supabase.com</strong>, create a free account, and start a new project. Pick any region close to your audience.</p>
+    </div>
+
+    <div class="setup-step">
+      <span class="setup-step-num">2</span>
+      <h3>Create the waitlist table</h3>
+      <p>In your Supabase dashboard, go to <strong>SQL Editor</strong> and run this query:</p>
+      <code><span class="kw">CREATE TABLE</span> waitlist (
+  id <span class="kw">BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY</span>,
+  email <span class="kw">TEXT NOT NULL UNIQUE</span>,
+  source <span class="kw">TEXT DEFAULT</span> <span class="str">'website'</span>,
+  created_at <span class="kw">TIMESTAMPTZ DEFAULT</span> now()
+);
+
+<span class="cmt">-- Allow public inserts (for the signup form)</span>
+<span class="kw">ALTER TABLE</span> waitlist <span class="kw">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="kw">CREATE POLICY</span> <span class="str">"Allow public insert"</span>
+  <span class="kw">ON</span> waitlist <span class="kw">FOR INSERT</span>
+  <span class="kw">TO</span> anon
+  <span class="kw">WITH CHECK</span> (<span class="kw">true</span>);
+
+<span class="kw">CREATE POLICY</span> <span class="str">"Allow public select"</span>
+  <span class="kw">ON</span> waitlist <span class="kw">FOR SELECT</span>
+  <span class="kw">TO</span> anon
+  <span class="kw">USING</span> (<span class="kw">true</span>);
+
+<span class="kw">CREATE POLICY</span> <span class="str">"Allow public delete"</span>
+  <span class="kw">ON</span> waitlist <span class="kw">FOR DELETE</span>
+  <span class="kw">TO</span> anon
+  <span class="kw">USING</span> (<span class="kw">true</span>);</code>
+    </div>
+
+    <div class="setup-step">
+      <span class="setup-step-num">3</span>
+      <h3>Grab your credentials</h3>
+      <p>In Supabase, go to <strong>Settings → API</strong>. Copy your <strong>Project URL</strong> and <strong>anon/public key</strong>, and enter them below along with a password for the admin panel.</p>
+    </div>
+
+    <div class="setup-fields">
+      <div class="setup-field">
+        <label>Supabase Project URL</label>
+        <input type="url" id="setupUrl" placeholder="https://abcdefgh.supabase.co" />
+        <div class="field-hint">Found in Settings → API → Project URL</div>
+      </div>
+      <div class="setup-field">
+        <label>Supabase Anon Key</label>
+        <input type="text" id="setupKey" placeholder="eyJhbGciOiJIUzI1NiIs..." />
+        <div class="field-hint">Found in Settings → API → Project API keys → anon / public</div>
+      </div>
+      <div class="setup-field">
+        <label>Admin Panel Password</label>
+        <input type="password" id="setupPassword" placeholder="Choose a strong password" />
+        <div class="field-hint">Used to protect access to the admin dashboard</div>
+      </div>
+    </div>
+
+    <div class="setup-save-row">
+      <button class="btn-action btn-secondary" onclick="closeSetup()">Cancel</button>
+      <button class="btn-action btn-primary" onclick="saveSetup()">Save &amp; Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ADMIN PANEL ═══════════════════ -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>📋 Waitlist Dashboard</h2>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
+    </div>
+
+    <!-- Login Gate -->
+    <div class="admin-login" id="adminLogin">
+      <p>Enter your admin password to view signups.</p>
+      <div class="admin-login-form" id="adminLoginForm">
+        <input type="password" id="adminPass" placeholder="Admin password" onkeydown="if(event.key==='Enter'){event.preventDefault();adminAuth()}" />
+        <button onclick="adminAuth()">Unlock</button>
+      </div>
+      <div class="admin-login-error" id="adminLoginError">Incorrect password. Try again.</div>
+    </div>
+
+    <!-- Dashboard (hidden until auth) -->
+    <div class="admin-dashboard" id="adminDashboard">
+      <div class="admin-status" id="adminStatus"></div>
+
+      <div class="admin-stats">
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal">–</div>
+          <div class="stat-label">Total Signups</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statToday">–</div>
+          <div class="stat-label">Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statWeek">–</div>
+          <div class="stat-label">This Week</div>
+        </div>
+      </div>
+
+      <div class="admin-toolbar">
+        <input type="text" class="admin-search" id="adminSearch" placeholder="Search emails..." oninput="filterTable()" />
+        <div class="admin-toolbar-actions">
+          <button class="btn-action btn-refresh" onclick="loadSignups()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Email</th>
+              <th>Signed Up</th>
+              <th>Source</th>
+              <th style="width:44px;"></th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+        <div class="admin-empty" id="adminEmpty" style="display:none;">
+          <div class="admin-empty-icon">📭</div>
+          <p>No signups yet. Share your landing page to start collecting emails.</p>
+        </div>
+      </div>
+
+      <div class="admin-footer-actions">
+        <button class="btn-action btn-logout" onclick="adminLogout()">🔒 Lock</button>
+        <button class="btn-action btn-clear" onclick="clearAllSignups()">🗑 Clear All</button>
+        <button class="btn-action btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ JAVASCRIPT ═══════════════════ -->
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFIGURATION & SUPABASE CLIENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const CONFIG_KEY = 'sms_config';
+let db = null;           // Supabase client instance
+let allSignups = [];     // Cache of loaded signups
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; } catch { return {}; }
+}
+
+function isConfigured() {
+  const c = getConfig();
+  return !!(c.url && c.key && c.password);
+}
+
+function initSupabase() {
+  const c = getConfig();
+  if (c.url && c.key) {
+    db = supabase.createClient(c.url, c.key);
+    return true;
+  }
+  return false;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SETUP FLOW
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function openSetup() {
+  const c = getConfig();
+  document.getElementById('setupUrl').value = c.url || '';
+  document.getElementById('setupKey').value = c.key || '';
+  document.getElementById('setupPassword').value = '';
+  document.getElementById('setupOverlay').classList.add('active');
+}
+
+function closeSetup() {
+  document.getElementById('setupOverlay').classList.remove('active');
+}
+
+async function saveSetup() {
+  const url = document.getElementById('setupUrl').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('setupKey').value.trim();
+  const password = document.getElementById('setupPassword').value;
+
+  if (!url || !key || !password) {
+    alert('Please fill in all three fields.');
+    return;
+  }
+
+  // Test the connection
+  const testClient = supabase.createClient(url, key);
+  const { error } = await testClient.from('waitlist').select('id').limit(1);
+
+  if (error) {
+    alert('Connection failed: ' + error.message + '\n\nMake sure you ran the SQL to create the waitlist table and that your URL and key are correct.');
+    return;
+  }
+
+  // Save config
+  localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key, password }));
+  initSupabase();
+  closeSetup();
+  checkSetup();
+  alert('Connected to Supabase successfully! Your waitlist is live.');
+}
+
+function checkSetup() {
+  const banner = document.getElementById('setupBanner');
+  if (isConfigured()) {
+    banner.style.display = 'none';
+    initSupabase();
+  } else {
+    banner.style.display = 'flex';
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// EMAIL SIGNUP (PUBLIC)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+async function handleSignup(e, source) {
+  e.preventDefault();
+
+  const isHero = source === 'hero';
+  const input = document.getElementById(isHero ? 'heroEmail' : 'ctaEmail');
+  const btn = document.getElementById(isHero ? 'heroBtn' : 'ctaBtn');
+  const msgEl = document.getElementById(isHero ? 'heroMessage' : 'ctaMessage');
+  const email = input.value.trim().toLowerCase();
+  const sourceLabel = isHero ? 'Hero Section' : 'Bottom CTA';
+
+  if (!email) return;
+
+  // UI: loading state
+  btn.disabled = true;
+  btn.textContent = 'Joining...';
+
+  // Check if Supabase is configured
+  if (!db) {
+    showFormMsg(msgEl, 'error', 'Backend not configured yet. Please set up Supabase first.');
+    resetBtn(btn);
+    return;
+  }
+
+  try {
+    const { data, error } = await db
+      .from('waitlist')
+      .insert([{ email, source: sourceLabel }])
+      .select();
+
+    if (error) {
+      // Duplicate check (Postgres unique constraint code: 23505)
+      if (error.code === '23505') {
+        showFormMsg(msgEl, 'error', 'This email is already on the waitlist!');
+      } else {
+        showFormMsg(msgEl, 'error', 'Something went wrong. Please try again.');
+        console.error('Supabase insert error:', error);
+      }
+      resetBtn(btn);
+      return;
+    }
+
+    // Success
+    showFormMsg(msgEl, 'success', "You're on the list! We'll be in touch soon.");
+    btn.textContent = '✓ Joined!';
+    btn.classList.add('success');
+    input.value = '';
+
+    setTimeout(() => {
+      btn.classList.remove('success');
+      resetBtn(btn);
+    }, 2500);
+
+  } catch (err) {
+    showFormMsg(msgEl, 'error', 'Network error. Please check your connection.');
+    console.error('Signup error:', err);
+    resetBtn(btn);
+  }
+}
+
+function showFormMsg(el, type, text) {
+  el.className = `form-message show ${type}`;
+  el.textContent = text;
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+function resetBtn(btn) {
+  btn.disabled = false;
+  btn.textContent = 'Join Waitlist';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ADMIN PANEL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let adminAuthed = false;
+
+function openAdmin() {
+  if (!isConfigured()) {
+    openSetup();
+    return;
+  }
+  document.getElementById('adminOverlay').classList.add('active');
+  document.getElementById('adminPass').value = '';
+  document.getElementById('adminLoginError').style.display = 'none';
+
+  if (adminAuthed) {
+    showDashboard();
+    loadSignups();
+  } else {
+    document.getElementById('adminLogin').style.display = 'block';
+    document.getElementById('adminDashboard').classList.remove('active');
+  }
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('active');
+}
+
+function adminAuth() {
+  const pass = document.getElementById('adminPass').value;
+  const config = getConfig();
+
+  if (pass === config.password) {
+    adminAuthed = true;
+    showDashboard();
+    loadSignups();
+  } else {
+    document.getElementById('adminLoginError').style.display = 'block';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminPass').focus();
+  }
+}
+
+function adminLogout() {
+  adminAuthed = false;
+  document.getElementById('adminLogin').style.display = 'block';
+  document.getElementById('adminDashboard').classList.remove('active');
+  document.getElementById('adminPass').value = '';
+}
+
+function showDashboard() {
+  document.getElementById('adminLogin').style.display = 'none';
+  document.getElementById('adminDashboard').classList.add('active');
+}
+
+function setAdminStatus(type, msg) {
+  const el = document.getElementById('adminStatus');
+  el.className = `admin-status show ${type}`;
+  el.textContent = msg;
+  if (type !== 'info') setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+async function loadSignups() {
+  if (!db) return;
+  setAdminStatus('info', 'Loading signups...');
+
+  try {
+    const { data, error } = await db
+      .from('waitlist')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      setAdminStatus('err', 'Failed to load: ' + error.message);
+      return;
+    }
+
+    allSignups = data || [];
+    renderTable(allSignups);
+    updateStats(allSignups);
+    setAdminStatus('ok', `Loaded ${allSignups.length} signup${allSignups.length !== 1 ? 's' : ''}`);
+
+  } catch (err) {
+    setAdminStatus('err', 'Network error loading signups.');
+    console.error(err);
+  }
+}
+
+function updateStats(signups) {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+  document.getElementById('statTotal').textContent = signups.length;
+  document.getElementById('statToday').textContent = signups.filter(s => s.created_at && s.created_at.startsWith(todayStr)).length;
+  document.getElementById('statWeek').textContent = signups.filter(s => s.created_at && new Date(s.created_at) >= weekAgo).length;
+}
+
+function renderTable(signups) {
+  const tbody = document.getElementById('adminTableBody');
+  const emptyEl = document.getElementById('adminEmpty');
+
+  if (signups.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  tbody.innerHTML = signups.map((s, i) => {
+    const date = new Date(s.created_at);
+    const timeStr = date.toLocaleDateString('en-IE', {
+      day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+    return `<tr data-id="${s.id}">
+      <td style="color:#B0A89E; font-size:0.78rem;">${signups.length - i}</td>
+      <td class="email-cell">${esc(s.email)}</td>
+      <td class="time-cell">${timeStr}</td>
+      <td><span class="source-badge">${esc(s.source || 'website')}</span></td>
+      <td><button class="btn-del-row" onclick="deleteRow(${s.id})" title="Delete">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('adminSearch').value.toLowerCase();
+  if (!q) { renderTable(allSignups); return; }
+  const filtered = allSignups.filter(s => s.email.toLowerCase().includes(q));
+  renderTable(filtered);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ADMIN ACTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+async function deleteRow(id) {
+  if (!confirm('Delete this signup?')) return;
+  if (!db) return;
+
+  setAdminStatus('info', 'Deleting...');
+  const { error } = await db.from('waitlist').delete().eq('id', id);
+
+  if (error) {
+    setAdminStatus('err', 'Delete failed: ' + error.message);
+    return;
+  }
+
+  allSignups = allSignups.filter(s => s.id !== id);
+  renderTable(allSignups);
+  updateStats(allSignups);
+  setAdminStatus('ok', 'Entry deleted.');
+}
+
+async function clearAllSignups() {
+  if (!confirm('⚠️ This will permanently delete ALL signups from the database. Are you sure?')) return;
+  if (!confirm('Last chance — this cannot be undone. Proceed?')) return;
+  if (!db) return;
+
+  setAdminStatus('info', 'Clearing all signups...');
+
+  // Delete all rows using gte on id (always true for positive ids)
+  const { error } = await db.from('waitlist').delete().gte('id', 0);
+
+  if (error) {
+    setAdminStatus('err', 'Clear failed: ' + error.message);
+    return;
+  }
+
+  allSignups = [];
+  renderTable([]);
+  updateStats([]);
+  setAdminStatus('ok', 'All signups cleared.');
+}
+
+function exportCSV() {
+  if (allSignups.length === 0) {
+    alert('No signups to export.');
+    return;
+  }
+  const header = 'Email,Source,Signed Up\n';
+  const rows = allSignups.map(s =>
+    `"${s.email}","${s.source || 'website'}","${s.created_at}"`
+  ).join('\n');
+
+  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `shieldmyshop-waitlist-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setAdminStatus('ok', `Exported ${allSignups.length} rows.`);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// UTILITY
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+// Close overlays on backdrop click
+document.getElementById('adminOverlay').addEventListener('click', function(e) { if (e.target === this) closeAdmin(); });
+document.getElementById('setupOverlay').addEventListener('click', function(e) { if (e.target === this) closeSetup(); });
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeAdmin(); closeSetup(); }
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+checkSetup();
+
+// Secret admin access: visit yoursite.com/#admin to open the panel
+function checkHash() {
+  if (window.location.hash === '#admin') {
+    openAdmin();
+    // Clear hash so it doesn't stay visible in the URL bar
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+checkHash();
+window.addEventListener('hashchange', checkHash);
+</script>
+</body>
+</html>
